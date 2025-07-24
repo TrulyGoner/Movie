@@ -1,10 +1,6 @@
-import type { NextConfig } from 'next';
-
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   reactStrictMode: true,
-  env: {
-    WATCHMODE_API_KEY: 'PfW6rRBXsnrLsaqI38Qj9U7fWPommCUVqMQ5fKQx',
-  },
 };
 
-export default nextConfig;
+module.exports = nextConfig;

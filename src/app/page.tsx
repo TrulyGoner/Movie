@@ -1,12 +1,4 @@
-import { MoonIcon, SunIcon } from '@heroicons/react/24/solid';
-import Link from 'next/link';
 import ClientHome from './ClientHome';
-import { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: 'MovieFinder',
-  description: 'Search and save your favorite movies',
-};
 
 interface Movie {
   id: string;
@@ -17,32 +9,54 @@ interface Movie {
 }
 
 interface SearchResponse {
-  results: SearchResult[];
+  titles: SearchResult[];
 }
 
 interface SearchResult {
-  id: string;
-  name: string;
+  id: number;
+  title: string;
   year: number;
   type: string;
+  poster?: string;
 }
 
 async function fetchInitialMovies(): Promise<Movie[]> {
-  const res = await fetch(
-    `https://api.watchmode.com/v1/list-titles/?apiKey=${process.env.WATCHMODE_API_KEY}&limit=6`,
-    { cache: 'no-store' } // Equivalent to getServerSideProps behavior
-  );
-  if (!res.ok) {
-    throw new Error('Failed to fetch initial movies');
+  try {
+    const apiKey = process.env.WATCHMODE_API_KEY;
+    if (!apiKey) {
+      console.error('WATCHMODE_API_KEY is not set');
+      return [];
+    }
+
+    const res = await fetch(
+      `https://api.watchmode.com/v1/list-titles/?apiKey=${apiKey}&limit=6&types=movie`,
+      { 
+        cache: 'no-store',
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'MovieFinder/1.0'
+        }
+      }
+    );
+    
+    if (!res.ok) {
+      console.error(`Fetch error: ${res.status} ${res.statusText}`);
+      return [];
+    }
+    
+    const data: SearchResponse = await res.json();
+    
+    return (data.titles || []).map((item) => ({
+      id: item.id.toString(),
+      title: item.title,
+      poster: item.poster || 'https://via.placeholder.com/300x450?text=' + encodeURIComponent(item.title),
+      year: item.year?.toString() || 'Unknown',
+      streaming: [],
+    }));
+  } catch (error) {
+    console.error('Error fetching initial movies:', error);
+    return [];
   }
-  const data: SearchResponse = await res.json();
-  return data.results.map((item) => ({
-    id: item.id,
-    title: item.name,
-    poster: 'https://via.placeholder.com/300x450', // Placeholder, replace with OMDB data
-    year: item.year.toString(),
-    streaming: [],
-  }));
 }
 
 export default async function Home() {
